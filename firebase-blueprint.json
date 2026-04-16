@@ -1,0 +1,73 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Stores user preferences, onboarding data, and aggregate stats.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "profession": { "type": "string", "enum": ["Corporate employee", "Freelancer", "Remote worker", "Other"] },
+        "workplaceVibe": { "type": "string", "enum": ["Family vibe", "Individual"] },
+        "mode": { "type": "string", "enum": ["Solo grinder", "Squad goals"] },
+        "tummyConditions": { "type": "array", "items": { "type": "string" } },
+        "commuterStress": { "type": "boolean" },
+        "mealFatigue": { "type": "boolean" },
+        "earlyLunch": { "type": "boolean" },
+        "brownBagExperience": { "type": "string" },
+        "reminderTime": { "type": "string", "description": "HH:mm format" },
+        "streak": { "type": "number" },
+        "bestStreak": { "type": "number" },
+        "totalSavings": { "type": "number" },
+        "onboardingCompleted": { "type": "boolean" },
+        "referralCode": { "type": "string" },
+        "joinedDate": { "type": "string", "format": "date-time" },
+        "lastActiveDate": { "type": "string", "format": "date-time" },
+        "seenMilestones": { "type": "array", "items": { "type": "string" }, "description": "List of milestone IDs already celebrated" }
+      },
+      "required": ["userId", "email", "onboardingCompleted"]
+    },
+    "Log": {
+      "title": "Daily Log",
+      "description": "A record of whether the user packed lunch or forgot.",
+      "type": "object",
+      "properties": {
+        "logId": { "type": "string" },
+        "userId": { "type": "string" },
+        "date": { "type": "string", "description": "YYYY-MM-DD" },
+        "status": { "type": "string", "enum": ["packed", "forgot"] },
+        "savingsImpact": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["logId", "userId", "date", "status"]
+    },
+    "Referral": {
+      "title": "Referral Record",
+      "description": "Tracks referrals between users.",
+      "type": "object",
+      "properties": {
+        "referralId": { "type": "string" },
+        "referrerUserId": { "type": "string" },
+        "referredUserId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["referralId", "referrerUserId", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "UserProfile" },
+      "description": "User profile data"
+    },
+    "/logs/{logKey}": {
+      "schema": { "$ref": "Log" },
+      "description": "Daily logs, key is {userId}_{date}"
+    },
+    "/referrals/{referralCode}": {
+      "schema": { "$ref": "Referral" },
+      "description": "Referral records keyed by referral code"
+    }
+  }
+}

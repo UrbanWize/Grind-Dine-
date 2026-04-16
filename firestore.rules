@@ -1,0 +1,141 @@
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: users
+// Document ID: {userId}
+// Fields:
+//   - userId: string (required)
+//   - email: string (required, email format)
+//   - name: string (optional)
+//   - profession: string (optional, enum)
+//   - workplaceVibe: string (optional, enum)
+//   - mode: string (optional, enum)
+//   - tummyConditions: list (optional)
+//   - commuterStress: bool (optional)
+//   - mealFatigue: bool (optional)
+//   - earlyLunch: bool (optional)
+//   - brownBagExperience: string (optional)
+//   - reminderTime: string (optional, HH:mm)
+//   - streak: number (optional)
+//   - bestStreak: number (optional)
+//   - totalSavings: number (optional)
+//   - onboardingCompleted: bool (required)
+//   - referralCode: string (optional)
+//   - joinedDate: string (optional, ISO)
+//   - lastActiveDate: string (optional, ISO)
+//   - seenMilestones: list (optional)
+//
+// Collection: logs
+// Document ID: {userId}_{date}
+// Fields:
+//   - logId: string (required)
+//   - userId: string (required)
+//   - date: string (required, YYYY-MM-DD)
+//   - status: string (required, enum: packed|forgot)
+//   - savingsImpact: number (required)
+//   - createdAt: string (required, ISO)
+//
+// Collection: referrals
+// Document ID: {referralCode}
+// Fields:
+//   - referralId: string (required)
+//   - referrerUserId: string (required)
+//   - referredUserId: string (optional)
+//   - status: string (required, enum: pending|active)
+//   - createdAt: string (required, ISO)
+//
+// ===============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "danielmwenda240@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidDateString(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}.*Z?$");
+    }
+
+    function isValidLogDate(dateStr) {
+      return dateStr is string && dateStr.matches("^\\d{4}-\\d{2}-\\d{2}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.userId == request.auth.uid &&
+             isValidEmail(data.email) &&
+             (data.onboardingCompleted is bool) &&
+             (!('streak' in data) || data.streak is number) &&
+             (!('totalSavings' in data) || data.totalSavings is number);
+    }
+
+    function isValidLog(data) {
+      return data.userId == request.auth.uid &&
+             isValidLogDate(data.date) &&
+             data.status in ['packed', 'forgot'] &&
+             data.savingsImpact is number &&
+             isValidDateString(data.createdAt);
+    }
+
+    function isValidReferral(data) {
+      return data.referrerUserId is string &&
+             data.status in ['pending', 'active'] &&
+             isValidDateString(data.createdAt);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /logs/{logKey} {
+      // logKey is {userId}_{date}
+      allow read: if isAuthenticated() && (logKey.startsWith(request.auth.uid + "_") || (resource != null && resource.data.userId == request.auth.uid));
+      allow create: if isAuthenticated() && logKey.startsWith(request.auth.uid + "_") && isValidLog(request.resource.data);
+      allow update: if isAuthenticated() && logKey.startsWith(request.auth.uid + "_") && isValidLog(request.resource.data);
+    }
+
+    match /referrals/{referralCode} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidReferral(request.resource.data);
+      allow update: if isAuthenticated() && (request.resource.data.referredUserId == request.auth.uid || request.resource.data.referrerUserId == request.auth.uid);
+    }
+
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
