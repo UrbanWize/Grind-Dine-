@@ -2,7 +2,8 @@ import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getAuth, signOut } from "firebase/auth";
 import { getFirestore, doc, onSnapshot } from "firebase/firestore";
-
+import { getAuth } from "firebase/auth";
+export const auth = getAuth(app);
 const firebaseConfig = {
   apiKey: "AIzaSyDsDa1zWOIr0VnnrjTx0JdpwHMHbp210QA",
   authDomain: "grind-dine.firebaseapp.com",
