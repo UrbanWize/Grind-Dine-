@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { auth, onSnapshot, doc, db } from './firebase';
+import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import Layout from './Layout';
-import ErrorBoundary from './ErrorBoundary';
-import Toastr from './Toastr';
 import { Auth } from './Auth';
 
 // Pages
@@ -39,24 +37,21 @@ function App() {
   }
 
   return (
-    <ErrorBoundary>
-      <Toastr />
-      <Router>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<LandingPage />} />
-            <Route path="login" element={<LoginPage />} />
-            <Route path="onboarding" element={<OnboardingPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="profile" element={<ProfilePage />} />
-            <Route path="tips" element={<TipsPage />} />
-            <Route path="referrals" element={<ReferralsPage />} />
-            <Route path="squad" element={<SquadPage />} />
-            <Route path="starter-kit" element={<StarterKitPage />} />
-          </Route>
-        </Routes>
-      </Router>
-    </ErrorBoundary>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<LandingPage />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="onboarding" element={<OnboardingPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="profile" element={<ProfilePage />} />
+          <Route path="tips" element={<TipsPage />} />
+          <Route path="referrals" element={<ReferralsPage />} />
+          <Route path="squad" element={<SquadPage />} />
+          <Route path="starter-kit" element={<StarterKitPage />} />
+        </Route>
+      </Routes>
+    </Router>
   );
 }
 
